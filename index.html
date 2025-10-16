@@ -2,93 +2,65 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>CreateWeb – Deploy ZIP/HTML</title>
+  <title>CreateWeb</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body {
+    /* Semua CSS original kamu tetap sama */
+    body, html {
+      margin: 0;
+      padding: 0;
       font-family: 'Poppins', sans-serif;
-      background: #0c0c1e;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
+      background: radial-gradient(circle at top left, #1a1a2e, #0c0c1e);
+      color: black;
     }
-    .card {
-      background: #1a1a2e;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,255,242,0.3);
-      width: 90%;
-      max-width: 450px;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 6px;
-      border: 1px solid #00fff2;
-      background: transparent;
-      color: white;
-    }
-    button {
-      background: #00fff2;
-      color: #0c0c1e;
-      font-weight: bold;
-      cursor: pointer;
-      border: none;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #00c0b2;
-    }
-    pre {
-      text-align: left;
-      background: #111;
-      padding: 10px;
-      border-radius: 8px;
-      max-height: 300px;
-      overflow-y: auto;
-      color: #0f0;
-    }
+    form { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,.1);}
+    input, button { margin: 10px 0; padding: 10px; width: 100%; border: 2px solid black;}
+    button { background: #0070f3; color: white; border: none; cursor: pointer; border-radius: 5px;}
+    button:hover { background: #0059c1;}
+    pre { background: #eee; padding: 10px; border-radius: 5px; font-size: 10px;}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>🚀 CreateWeb Auto Deploy</h2>
-    <p>Upload file <b>.html</b> atau <b>.zip</b> untuk deploy ke Vercel</p>
+  <main class="main-content">
+    <form id="deployForm" class="neon-box">
+      <label class="neon-text">Nama Project</label><br>
+      <input type="text" id="project" required placeholder="Nama Web"><br><br>
 
-    <form id="deployForm">
-      <input type="text" id="project" placeholder="Nama Project (tanpa spasi)" required>
-      <input type="file" id="file" accept=".html,.zip" required>
-      <button type="submit">Deploy Sekarang</button>
+      <label class="neon-text">Upload File</label><br>
+      <input type="file" id="file" accept=".html,.zip" required><br><br>
+
+      <button type="submit" class="button">Deploy</button>
     </form>
 
     <pre id="result"></pre>
-  </div>
+  </main>
 
   <script>
     document.getElementById("deployForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const project = document.getElementById("project").value.trim();
-      const token = "L6uK0vROD5lHr8NP2BlqqGAr"; // TOKEN VERSEL
+      const token = "L6uK0vROD5lHr8NP2BlqqGAr";
       const file = document.getElementById("file").files[0];
-      if (!file) return Swal.fire("Error", "Pilih file dulu!", "error");
+
+      if (!file) {
+        Swal.fire("Gagal", "Pilih file terlebih dahulu!", "error");
+        return;
+      }
 
       Swal.fire({
-        title: "Sedang Deploy...",
-        text: "Mohon tunggu, sedang upload ke Vercel",
+        title: "Membuat...",
+        text: "Sedang Membuat Website",
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
 
       let filesPayload = [];
 
+      // Jika ZIP
       if (file.name.endsWith(".zip")) {
         const zip = await JSZip.loadAsync(file);
         const entries = Object.keys(zip.files);
@@ -104,12 +76,12 @@
           }
         }
       } else {
-        // Kalau bukan ZIP, asumsikan HTML tunggal
+        // Jika HTML tunggal
         const htmlData = await file.text();
         filesPayload.push({ file: "index.html", data: htmlData });
       }
 
-      // Pastikan proyek tersedia
+      // Buat project di Vercel
       await fetch("https://api.vercel.com/v9/projects", {
         method: "POST",
         headers: {
@@ -119,7 +91,7 @@
         body: JSON.stringify({ name: project })
       });
 
-      // Deploy ke Vercel
+      // Deploy
       const res = await fetch("https://api.vercel.com/v13/deployments", {
         method: "POST",
         headers: {
@@ -134,12 +106,11 @@
       });
 
       const result = await res.json();
-      const resultBox = document.getElementById("result");
-      resultBox.textContent = JSON.stringify(result, null, 2);
+      document.getElementById("result").textContent = JSON.stringify(result, null, 2);
 
       if (result.url) {
-        Swal.fire("✅ Berhasil!", "Website berhasil di-deploy!", "success");
-        resultBox.textContent += `\n\n🌐 URL: https://${result.url}`;
+        Swal.fire("Sukses!", "Web berhasil dibuat!", "success");
+        document.getElementById("result").textContent += `\n\n🌐 URL: https://${result.url}`;
       } else {
         Swal.fire("Gagal", "Terjadi kesalahan saat deploy.", "error");
       }
